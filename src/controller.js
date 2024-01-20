@@ -10,6 +10,14 @@ const finished = (error) => {
     }
 };
 
+/**
+ * Codes:
+ * 9001: Quantity not real
+ * 9002: Product code repeated
+ * 9003: Product added
+ *
+ * 9099: Type mismatch
+ */
 class ProductsManager {
     constructor(file_path = process.cwd(), file = productosFile) {
         this.file_path = file_path;
@@ -36,6 +44,46 @@ class ProductsManager {
         } else {
             return undefined;
         }
+    }
+
+    addProduct(title, description, code, price, stat = true, stock, category, thumbnail = []) {
+        if (stock <= 0 || typeof stock !== 'number') {
+            return '9001';
+        }
+
+        let ids = [];
+        let codes = [];
+        Object.entries(this.products).forEach((producto) => {
+            ids.push(producto[0]);
+            codes.push(producto[1]['code']);
+        });
+
+        let max = Math.max(...ids);
+
+        if (max == '-Infinity') {
+            max = 0;
+        }
+
+        if (codes.includes(code)) {
+            return '9002';
+        }
+
+        let this_item = {};
+
+        this_item.id = max + 1;
+        this_item.title = title;
+        this_item.description = description;
+        this_item.code = code;
+        this_item.price = price;
+        this_item.stat = stat;
+        this_item.stock = stock;
+        this_item.category = category;
+        this_item.thumbnail = thumbnail;
+
+        this.products[this_item.id] = this_item;
+
+        fs.writeFileSync(path.join(this.file_path, this.file), JSON.stringify(this.products, null, 2), 'utf-8', finished);
+        return '9003';
     }
 }
 
@@ -73,6 +121,96 @@ exports.getProducts = (req, res) => {
             success: true,
             message: `Here are all the products`,
             data: prod_list,
+        });
+    }
+};
+
+exports.getProduct = (req, res) => {
+    const all_products = new ProductsManager();
+    const new_pid = req.params.pid;
+    const selected_product = all_products['products'][new_pid];
+
+    if (new_pid !== undefined && selected_product !== undefined) {
+        if (new_pid <= 0 || isNaN(new_pid)) {
+            res.status(404).json({
+                success: true,
+                message: `The ID must be greater than zero and has to exist in the products list.`,
+                data: {},
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                message: `Here is the product with the id ${new_pid}`,
+                data: selected_product,
+            });
+        }
+    } else {
+        res.status(404).json({
+            success: true,
+            message: `The ID must be greater than zero and has to exist in the products list.`,
+            data: {},
+        });
+    }
+};
+
+exports.postProduct = (req, res) => {
+    const data = req.body;
+
+    // if (!data.title || typeof data.title !== 'string' || !(data.title instanceof String)) {
+    //     return '9099';
+    // }
+
+    // if (!data.description || typeof data.description !== 'string' || !(data.description instanceof String)) {
+    //     return '9099';
+    // }
+
+    // if (!data.code || typeof data.code !== 'string' || !(data.code instanceof String)) {
+    //     return '9099';
+    // }
+
+    // if (!data.price || typeof data.price !== 'number' || !(data.price instanceof Number)) {
+    //     return '9099';
+    // }
+
+    // if (!data.stat || typeof data.stat !== 'boolean' || !(data.stat instanceof Boolean)) {
+    //     return '9099';
+    // }
+
+    // if (!data.stock || typeof data.stock !== 'number' || !(data.stock instanceof Number)) {
+    //     return '9099';
+    // }
+
+    // if (!data.category || typeof data.category !== 'string' || !(data.category instanceof String)) {
+    //     return '9099';
+    // }
+
+    // if (!data.thumbnail || typeof data.thumbnail !== 'array' || !(data.thumbnail instanceof Array)) {
+    //     return '9099';
+    // }
+
+    const all_products = new ProductsManager();
+    const prod_list = all_products.addProduct(
+        data.title,
+        data.description,
+        data.code,
+        data.price,
+        data.stat,
+        data.stock,
+        data.category,
+        data.thumbnail
+    );
+
+    if (prod_list == 9003) {
+        res.status(200).json({
+            success: true,
+            message: `The product was added to the list.`,
+            data: {},
+        });
+    } else {
+        res.status(200).json({
+            success: true,
+            message: `no no no no.`,
+            data: {},
         });
     }
 };

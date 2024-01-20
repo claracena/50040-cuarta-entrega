@@ -1,4 +1,5 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 
 const app = express();
@@ -9,6 +10,7 @@ dotenv.config({ path: '../config/config.env' });
 const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', router);
 
