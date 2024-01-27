@@ -50,7 +50,7 @@ El servidor estará escuchando el puerto 8080, por lo que debe dirigirse a http:
 
 ```
 {
-"product": 1,
+    "product": 1,
     "quantity": 2
 }
 ```
